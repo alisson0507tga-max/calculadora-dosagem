@@ -1,6 +1,6 @@
 # Calculadora de Dosagem
 
-Aplicativo Android e web responsivo para calcular a dosagem de produtos por quilograma e o volume total necessário para um lote.
+Aplicativo Android e web responsivo para calcular a dosagem de produtos por quilograma e o volume total necessário para um lote. A versão Android inclui o ícone personalizado enviado, tema claro/escuro e espaçamento adequado abaixo da barra de notificações.
 
 ## Baixar e instalar o APK
 
@@ -34,7 +34,7 @@ Os dados ficam salvos localmente no navegador por meio de `localStorage`; nenhum
 | Arquivo | Descrição |
 |---|---|
 | `index.html` | Aplicativo web completo, incluindo HTML, CSS e JavaScript |
-| `CalculadoraDosagem.apk` | Instalador Android de depuração para uso no celular |
+| `CalculadoraDosagem.apk` | Instalador Android atualizado para uso no celular |
 | `android/` | Projeto Android que empacota o aplicativo web em um APK offline |
 | `README.md` | Instruções de uso, instalação e publicação |
 

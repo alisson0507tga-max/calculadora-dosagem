@@ -71,9 +71,26 @@
     }
   }
 
+  /* Tema escolhido pelo usuário */
+  body[data-theme="dark"]{
+    --bg:#0E1411; --bg-grad-1:#122019; --bg-grad-2:#16130F;
+    --surface:#171F1A; --surface-2:#1D2720; --ink:#E9F1EA; --ink-soft:#95A79A;
+    --line:#28332B; --leaf:#4FB183; --leaf-dark:#6BCB9B; --leaf-soft:#17281F;
+    --soil:#C79A73; --soil-soft:#2A231C; --danger:#E58167; --danger-soft:#2E1D18;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-md:0 2px 8px rgba(0,0,0,.35),0 14px 30px rgba(0,0,0,.35);
+  }
+  body[data-theme="light"]{
+    --bg:#F2F6EF; --bg-grad-1:#E6F0E1; --bg-grad-2:#F7F3EA;
+    --surface:#FFFFFF; --surface-2:#F5F8F3; --ink:#1E2A21; --ink-soft:#6D7C70;
+    --line:#DFE7DA; --leaf:#2E7D4F; --leaf-dark:#1F5C39; --leaf-soft:#E8F3EB;
+    --soil:#8A6446; --soil-soft:#F5EDE4; --danger:#C0563F; --danger-soft:#FBEDEA;
+    --shadow-sm:0 1px 2px rgba(24,50,33,.05),0 2px 8px rgba(24,50,33,.05);
+    --shadow-md:0 2px 6px rgba(24,50,33,.06),0 12px 28px rgba(24,50,33,.08);
+  }
+
   /* ============================================================
      2. BASE
-     ============================================================ */
+     ============================================================
   *,*::before,*::after{ box-sizing:border-box; }
 
   html{ -webkit-text-size-adjust:100%; }
@@ -162,7 +179,7 @@
     z-index:1;
     max-width:720px;
     margin:0 auto;
-    padding:18px 16px calc(52px + env(safe-area-inset-bottom));
+    padding:calc(30px + env(safe-area-inset-top)) 16px calc(52px + env(safe-area-inset-bottom));
   }
 
   .app > *{
@@ -216,6 +233,16 @@
     line-height:1.35;
     color:var(--ink-soft);
   }
+  .cabecalho-texto{ flex:1 1 auto; min-width:0; }
+  .btn-tema{
+    flex:0 0 auto; width:42px; height:42px; display:grid; place-items:center;
+    color:var(--ink); background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; cursor:pointer; box-shadow:var(--shadow-sm);
+  }
+  .btn-tema svg{ width:20px; height:20px; }
+  .btn-tema .icone-sol{ display:none; }
+  body[data-theme="dark"] .btn-tema .icone-lua{ display:none; }
+  body[data-theme="dark"] .btn-tema .icone-sol{ display:block; }
 
   /* ============================================================
      6. CARDS / LOTE
@@ -768,10 +795,14 @@
           <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
         </svg>
       </div>
-      <div>
+      <div class="cabecalho-texto">
         <h1>Calculadora de Dosagem</h1>
         <p>mL/kg de cada produto e volume necessário para o lote</p>
       </div>
+      <button type="button" class="btn-tema" id="btnTema" aria-label="Ativar tema escuro" title="Alternar tema">
+        <svg class="icone-lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3 6.7 6.7 0 0 0 21 12.8Z"/></svg>
+        <svg class="icone-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
     </header>
 
     <!-- Peso do lote -->
@@ -856,6 +887,7 @@
      CONSTANTES
      ============================================================ */
   var CHAVE_STORAGE = 'calculadora-dosagem-v1';
+  var CHAVE_TEMA = 'calculadora-dosagem-tema';
 
   var PADRAO = {
     lote: 5000,
@@ -898,10 +930,29 @@
   var elContador      = document.getElementById('contador');
   var elBtnAdicionar  = document.getElementById('btnAdicionar');
   var elBtnRestaurar  = document.getElementById('btnRestaurar');
+  var elBtnTema       = document.getElementById('btnTema');
 
   /* ============================================================
      UTILITÁRIOS
      ============================================================ */
+  function aplicarTema(tema){
+    var escolhido = tema === 'dark' ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', escolhido);
+    if(elBtnTema){
+      elBtnTema.setAttribute('aria-label', escolhido === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro');
+    }
+    try{ localStorage.setItem(CHAVE_TEMA, escolhido); }catch(e){}
+  }
+
+  function carregarTema(){
+    var tema = null;
+    try{ tema = localStorage.getItem(CHAVE_TEMA); }catch(e){}
+    if(tema !== 'dark' && tema !== 'light'){
+      tema = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    aplicarTema(tema);
+  }
+
   function reduzirMovimento(){
     return window.matchMedia &&
            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1320,6 +1371,7 @@
      INICIALIZAÇÃO
      ============================================================ */
   function iniciar(){
+    carregarTema();
     criarFundoAnimado();
     carregarEstado();
     atualizarLoteFormatado();
@@ -1343,6 +1395,9 @@
 
     elBtnAdicionar.addEventListener('click', adicionarProduto);
     elBtnRestaurar.addEventListener('click', restaurarPadrao);
+    elBtnTema.addEventListener('click', function(){
+      aplicarTema(document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
 
     window.addEventListener('pagehide', salvarEstado);
     document.addEventListener('visibilitychange', function(){
