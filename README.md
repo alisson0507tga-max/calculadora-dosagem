@@ -1,23 +1,28 @@
 # Calculadora de Dosagem
 
-Aplicativo web responsivo para calcular a dosagem de produtos por quilograma e o volume total necessário para um lote.
+Aplicativo Android e web responsivo para calcular a dosagem de produtos por quilograma e o volume total necessário para um lote.
 
-## Como usar
+## Baixar e instalar o APK
 
-1. Baixe ou clone este repositório.
-2. Abra o arquivo `index.html` em qualquer navegador moderno.
-3. Informe o peso do lote, ajuste os produtos, a dose e a base.
-4. O aplicativo calcula automaticamente a dosagem em `mL/kg` e o total em litros.
+Baixe o instalador Android diretamente na página de releases:
+
+**[Baixar CalculadoraDosagem.apk](https://github.com/alisson0507tga-max/calculadora-dosagem/releases/latest/download/CalculadoraDosagem.apk)**
+
+No celular Android:
+
+1. Toque no link acima e baixe o arquivo APK.
+2. Abra o arquivo baixado.
+3. Se o Android solicitar, permita a instalação pelo navegador ou pelo gerenciador de arquivos.
+4. Toque em **Instalar**.
+5. Abra o aplicativo **Calculadora de Dosagem**.
+
+Se o Android bloquear a instalação, acesse **Configurações > Segurança/Privacidade > Instalar apps desconhecidos** e permita temporariamente para o aplicativo usado para abrir o APK.
+
+## Como usar a versão web
+
+O arquivo `index.html` também pode ser aberto diretamente em qualquer navegador moderno. Informe o peso do lote, ajuste os produtos, a dose e a base. O aplicativo calcula automaticamente a dosagem em `mL/kg` e o total em litros.
 
 Os dados ficam salvos localmente no navegador por meio de `localStorage`; nenhum dado é enviado para um servidor.
-
-## Baixar
-
-No GitHub, selecione **Code > Download ZIP**. Depois de extrair o arquivo, abra `index.html`.
-
-## Publicar como aplicativo web
-
-O projeto é estático e pode ser publicado no GitHub Pages, Netlify, Vercel ou qualquer hospedagem de arquivos estáticos. Não há dependências nem etapa de compilação.
 
 ## Fórmulas
 
@@ -28,8 +33,14 @@ O projeto é estático e pode ser publicado no GitHub Pages, Netlify, Vercel ou 
 
 | Arquivo | Descrição |
 |---|---|
-| `index.html` | Aplicativo completo, incluindo HTML, CSS e JavaScript |
-| `README.md` | Instruções de uso e publicação |
+| `index.html` | Aplicativo web completo, incluindo HTML, CSS e JavaScript |
+| `CalculadoraDosagem.apk` | Instalador Android de depuração para uso no celular |
+| `android/` | Projeto Android que empacota o aplicativo web em um APK offline |
+| `README.md` | Instruções de uso, instalação e publicação |
+
+## Compilação do APK
+
+O APK foi compilado com Gradle e Android SDK. Para gerar uma nova versão, abra a pasta `android` e execute `gradle assembleDebug`. O resultado será criado em `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Observação
 
