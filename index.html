@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2E7D4F">
+<meta name="color-scheme" content="light dark">
+<title>Calculadora de Dosagem</title>
+<style>
+  /* ============================================================
+     1. TOKENS / TEMA
+     ============================================================ */
+  :root{
+    --bg:            #F2F6EF;
+    --bg-grad-1:     #E6F0E1;
+    --bg-grad-2:     #F7F3EA;
+
+    --surface:       #FFFFFF;
+    --surface-2:     #F5F8F3;
+
+    --ink:           #1E2A21;
+    --ink-soft:      #6D7C70;
+
+    --line:          #DFE7DA;
+
+    --leaf:          #2E7D4F;
+    --leaf-dark:     #1F5C39;
+    --leaf-soft:     #E8F3EB;
+
+    --soil:          #8A6446;
+    --soil-soft:     #F5EDE4;
+
+    --danger:        #C0563F;
+    --danger-soft:   #FBEDEA;
+
+    --shadow-sm: 0 1px 2px rgba(24,50,33,.05), 0 2px 8px rgba(24,50,33,.05);
+    --shadow-md: 0 2px 6px rgba(24,50,33,.06), 0 12px 28px rgba(24,50,33,.08);
+
+    --radius:    18px;
+    --radius-sm: 12px;
+
+    --cols: minmax(0,1.7fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr) 40px;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:            #0E1411;
+      --bg-grad-1:     #122019;
+      --bg-grad-2:     #16130F;
+
+      --surface:       #171F1A;
+      --surface-2:     #1D2720;
+
+      --ink:           #E9F1EA;
+      --ink-soft:      #95A79A;
+
+      --line:          #28332B;
+
+      --leaf:          #4FB183;
+      --leaf-dark:     #6BCB9B;
+      --leaf-soft:     #17281F;
+
+      --soil:          #C79A73;
+      --soil-soft:     #2A231C;
+
+      --danger:        #E58167;
+      --danger-soft:   #2E1D18;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-md: 0 2px 8px rgba(0,0,0,.35), 0 14px 30px rgba(0,0,0,.35);
+    }
+  }
+
+  /* ============================================================
+     2. BASE
+     ============================================================ */
+  *,*::before,*::after{ box-sizing:border-box; }
+
+  html{ -webkit-text-size-adjust:100%; }
+
+  body{
+    margin:0;
+    min-height:100dvh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size:16px;
+    line-height:1.45;
+    color:var(--ink);
+    background:var(--bg);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  input, button{ font-family:inherit; }
+
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  input[type=number]{ -moz-appearance:textfield; appearance:textfield; }
+
+  /* ============================================================
+     3. FUNDO ANIMADO
+     ============================================================ */
+  .bg{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    overflow:hidden;
+    pointer-events:none;
+    background:
+      radial-gradient(900px 520px at 12% -12%, var(--bg-grad-1), transparent 70%),
+      radial-gradient(760px 520px at 112% 104%, var(--bg-grad-2), transparent 66%),
+      var(--bg);
+  }
+
+  .orb{
+    position:absolute;
+    border-radius:50%;
+    opacity:.30;
+    will-change:transform;
+  }
+  .orb-1{
+    width:280px; height:280px;
+    left:-100px; top:10%;
+    background: radial-gradient(circle, rgba(46,125,79,.40), transparent 70%);
+    animation: orbitar 48s ease-in-out infinite alternate;
+  }
+  .orb-2{
+    width:320px; height:320px;
+    right:-130px; bottom:4%;
+    background: radial-gradient(circle, rgba(138,100,70,.32), transparent 70%);
+    animation: orbitar 62s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes orbitar{
+    from{ transform: translate3d(0,0,0) scale(1); }
+    to  { transform: translate3d(34px,-46px,0) scale(1.14); }
+  }
+
+  .particula{
+    position:absolute;
+    left:var(--x);
+    bottom:-16vh;
+    width:var(--s);
+    height:var(--s);
+    opacity:var(--op);
+    will-change:transform;
+    animation: flutuar var(--d) linear var(--delay) infinite;
+  }
+  .ponto   { background:var(--leaf); border-radius:50%; }
+  .folha   { background:var(--leaf); border-radius:0 100% 0 100%; }
+  .semente { background:var(--soil); border-radius:50% 50% 50% 50% / 66% 66% 34% 34%; }
+
+  @keyframes flutuar{
+    0%  { transform: translate3d(0,0,0) rotate(var(--rot)); }
+    100%{ transform: translate3d(var(--drift), -128vh, 0) rotate(calc(var(--rot) + 300deg)); }
+  }
+
+  /* ============================================================
+     4. LAYOUT
+     ============================================================ */
+  .app{
+    position:relative;
+    z-index:1;
+    max-width:720px;
+    margin:0 auto;
+    padding:18px 16px calc(52px + env(safe-area-inset-bottom));
+  }
+
+  .app > *{
+    animation: entraBloco .48s cubic-bezier(.2,.8,.3,1) both;
+  }
+  .app > *:nth-child(1){ animation-delay:.02s; }
+  .app > *:nth-child(2){ animation-delay:.06s; }
+  .app > *:nth-child(3){ animation-delay:.10s; }
+  .app > *:nth-child(4){ animation-delay:.14s; }
+  .app > *:nth-child(5){ animation-delay:.18s; }
+  .app > *:nth-child(6){ animation-delay:.22s; }
+
+  @keyframes entraBloco{
+    from{ opacity:0; transform: translateY(12px); }
+    to  { opacity:1; transform:none; }
+  }
+
+  /* ============================================================
+     5. CABEÇALHO
+     ============================================================ */
+  .cabecalho{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:6px 2px 4px;
+    margin-bottom:16px;
+  }
+
+  .marca{
+    flex:0 0 auto;
+    width:54px; height:54px;
+    border-radius:17px;
+    display:grid; place-items:center;
+    color:#fff;
+    background: linear-gradient(145deg, var(--leaf), var(--leaf-dark));
+    box-shadow: 0 8px 18px rgba(46,125,79,.28);
+  }
+  .marca svg{ width:28px; height:28px; }
+
+  .cabecalho h1{
+    margin:0 0 2px;
+    font-size:1.34rem;
+    font-weight:800;
+    letter-spacing:-.02em;
+    line-height:1.15;
+    color:var(--ink);
+  }
+  .cabecalho p{
+    margin:0;
+    font-size:.85rem;
+    line-height:1.35;
+    color:var(--ink-soft);
+  }
+
+  /* ============================================================
+     6. CARDS / LOTE
+     ============================================================ */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow-sm);
+  }
+
+  .lote-card{
+    position:relative;
+    overflow:hidden;
+    padding:16px 18px 18px;
+    margin-bottom:20px;
+    background: linear-gradient(135deg, var(--surface), var(--surface-2));
+    box-shadow:var(--shadow-md);
+  }
+  .lote-card::after{
+    content:"";
+    position:absolute;
+    right:-60px; top:-60px;
+    width:180px; height:180px;
+    border-radius:50%;
+    background: radial-gradient(circle, rgba(46,125,79,.12), transparent 70%);
+    pointer-events:none;
+  }
+
+  .lote-rotulo{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin-bottom:10px;
+    font-size:.72rem;
+    font-weight:800;
+    letter-spacing:.10em;
+    text-transform:uppercase;
+    color:var(--soil);
+  }
+  .lote-rotulo svg{ width:15px; height:15px; }
+
+  .lote-input{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:4px 14px;
+    background:var(--surface);
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    transition: border-color .18s ease, box-shadow .18s ease;
+  }
+  .lote-input:focus-within{
+    border-color:var(--leaf);
+    box-shadow: 0 0 0 4px rgba(46,125,79,.14);
+  }
+  .lote-input.invalido{
+    border-color:var(--danger);
+    box-shadow: 0 0 0 4px rgba(192,86,63,.13);
+  }
+
+  .lote-input input{
+    flex:1 1 auto;
+    min-width:0;
+    width:100%;
+    padding:8px 0;
+    border:none;
+    outline:none;
+    background:transparent;
+    color:var(--ink);
+    font-size:1.9rem;
+    font-weight:800;
+    letter-spacing:-.025em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lote-input .unidade{
+    font-size:1rem;
+    font-weight:800;
+    color:var(--ink-soft);
+    flex:0 0 auto;
+  }
+
+  .lote-formatado{
+    margin:9px 2px 0;
+    font-size:.76rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    letter-spacing:.01em;
+  }
+
+  /* ============================================================
+     7. SEÇÃO PRODUTOS
+     ============================================================ */
+  .secao-titulo{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin:0 2px 10px;
+  }
+  .secao-titulo h2{
+    margin:0;
+    font-size:.76rem;
+    font-weight:800;
+    letter-spacing:.10em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .contador{
+    padding:3px 10px;
+    font-size:.72rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:999px;
+    white-space:nowrap;
+  }
+
+  .produtos-cabecalho{ display:none; }
+
+  .produtos{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .produto{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    padding:14px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow-sm);
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .produto:focus-within{
+    border-color: rgba(46,125,79,.45);
+    box-shadow: var(--shadow-md);
+  }
+
+  .produto-cab{
+    grid-column:1 / -1;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    min-height:34px;
+  }
+  .rotulo{
+    font-size:.70rem;
+    font-weight:800;
+    letter-spacing:.10em;
+    text-transform:uppercase;
+    color:var(--soil);
+  }
+
+  .campo{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    min-width:0;
+  }
+  .campo label{
+    font-size:.68rem;
+    font-weight:800;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+
+  .campo-nome{ grid-column:1 / -1; }
+
+  .campo input{
+    width:100%;
+    min-width:0;
+    padding:11px 12px;
+    font-size:1rem;
+    font-weight:600;
+    color:var(--ink);
+    background:var(--surface-2);
+    border:1.5px solid var(--line);
+    border-radius:11px;
+    outline:none;
+    -webkit-appearance:none;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+  }
+  .campo input:focus{
+    background:var(--surface);
+    border-color:var(--leaf);
+    box-shadow: 0 0 0 4px rgba(46,125,79,.14);
+  }
+  .campo input.invalido{
+    border-color:var(--danger);
+    box-shadow: 0 0 0 4px rgba(192,86,63,.13);
+  }
+
+  .campo-dosagem{
+    grid-column:1 / -1;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:2px;
+    padding:11px 14px;
+    background:var(--leaf-soft);
+    border-radius:13px;
+  }
+  .campo-dosagem label{
+    margin:0;
+    color:var(--leaf-dark);
+    opacity:.9;
+  }
+
+  .resultado{
+    display:flex;
+    align-items:baseline;
+    gap:5px;
+    font-size:1.55rem;
+    font-weight:800;
+    line-height:1;
+    letter-spacing:-.025em;
+    white-space:nowrap;
+    color:var(--leaf-dark);
+    font-variant-numeric: tabular-nums;
+  }
+  .resultado small{
+    font-size:.72rem;
+    font-weight:800;
+    letter-spacing:0;
+    opacity:.85;
+  }
+
+  .valor{ display:inline-block; }
+
+  .btn-excluir{
+    flex:0 0 auto;
+    width:38px; height:38px;
+    display:grid; place-items:center;
+    padding:0;
+    color:var(--danger);
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:11px;
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .18s ease, border-color .18s ease, transform .12s ease;
+  }
+  .btn-excluir svg{ width:16px; height:16px; }
+  .btn-excluir:hover{
+    background:var(--danger-soft);
+    border-color: rgba(192,86,63,.35);
+  }
+  .btn-excluir:active{ transform: scale(.90); }
+
+  /* ============================================================
+     8. BOTÕES
+     ============================================================ */
+  .acoes{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:16px;
+  }
+
+  .btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    width:100%;
+    padding:15px 18px;
+    font-size:.92rem;
+    font-weight:800;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    border:1.5px solid transparent;
+    border-radius:14px;
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .12s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .btn svg{ width:18px; height:18px; }
+
+  .btn-primario{
+    color:#fff;
+    background: linear-gradient(145deg, var(--leaf), var(--leaf-dark));
+    box-shadow: 0 6px 16px rgba(46,125,79,.28);
+  }
+  .btn-primario:hover{ box-shadow: 0 9px 24px rgba(46,125,79,.36); }
+  .btn-primario:active{
+    transform: scale(.975);
+    box-shadow: 0 3px 10px rgba(46,125,79,.30);
+  }
+
+  .btn-secundario{
+    color:var(--ink-soft);
+    background:var(--surface);
+    border-color:var(--line);
+    box-shadow:var(--shadow-sm);
+  }
+  .btn-secundario:hover{
+    color:var(--soil);
+    border-color: var(--soil);
+  }
+  .btn-secundario:active{ transform: scale(.975); }
+
+  /* ============================================================
+     9. PAINEL DE VOLUME
+     ============================================================ */
+  .totais-card{
+    margin-top:20px;
+    padding:16px 18px 10px;
+  }
+  .totais-card h2{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin:0 0 3px;
+    font-size:.95rem;
+    font-weight:800;
+    letter-spacing:-.01em;
+    color:var(--ink);
+  }
+  .totais-card h2 svg{
+    width:18px; height:18px;
+    color:var(--leaf);
+    flex:0 0 auto;
+  }
+  .totais-sub{
+    margin:0 0 8px;
+    font-size:.76rem;
+    color:var(--ink-soft);
+  }
+
+  .total-item{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+    animation: entraItem .3s cubic-bezier(.2,.8,.3,1) both;
+  }
+  .total-item:last-child{ border-bottom:none; }
+
+  @keyframes entraItem{
+    from{ opacity:0; transform: translateY(6px); }
+    to  { opacity:1; transform:none; }
+  }
+
+  .total-icone{
+    flex:0 0 auto;
+    width:38px; height:38px;
+    display:grid; place-items:center;
+    color:var(--leaf-dark);
+    background:var(--leaf-soft);
+    border-radius:11px;
+  }
+  .total-icone svg{ width:17px; height:17px; }
+
+  .total-info{
+    flex:1 1 auto;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+
+  .total-nome{
+    font-size:.94rem;
+    font-weight:700;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .total-dosagem{
+    display:flex;
+    align-items:baseline;
+    gap:4px;
+    font-size:.78rem;
+    font-weight:700;
+    color:var(--leaf-dark);
+    font-variant-numeric: tabular-nums;
+    white-space:nowrap;
+  }
+  .total-dosagem .valor-mini{ font-weight:800; }
+  .total-dosagem .unidade-mini{
+    font-size:.68rem;
+    font-weight:800;
+    opacity:.8;
+  }
+
+  .total-valor{
+    flex:0 0 auto;
+    display:flex;
+    align-items:baseline;
+    gap:3px;
+    font-size:1.15rem;
+    font-weight:800;
+    color:var(--leaf-dark);
+    white-space:nowrap;
+    font-variant-numeric: tabular-nums;
+    letter-spacing:-.02em;
+  }
+  .total-valor small{
+    font-size:.75rem;
+    font-weight:800;
+    opacity:.8;
+  }
+
+  .vazio{
+    padding:24px 16px;
+    text-align:center;
+    font-size:.87rem;
+    color:var(--ink-soft);
+    background:var(--surface);
+    border:1px dashed var(--line);
+    border-radius:var(--radius);
+  }
+
+  /* ============================================================
+     10. ANIMAÇÕES DE ESTADO
+     ============================================================ */
+  @keyframes entraCard{
+    from{ opacity:0; transform: translateY(10px) scale(.985); }
+    to  { opacity:1; transform:none; }
+  }
+  .produto.entra{ animation: entraCard .28s cubic-bezier(.2,.8,.3,1); }
+
+  @keyframes saiCard{
+    to{ opacity:0; transform: translateX(26px) scale(.97); }
+  }
+  .produto.saindo{
+    animation: saiCard .19s ease forwards;
+    pointer-events:none;
+  }
+
+  @keyframes pulsoValor{
+    0%  { transform: scale(1); }
+    45% { transform: scale(1.08); }
+    100%{ transform: scale(1); }
+  }
+  .valor.pulsar{ animation: pulsoValor .22s ease; }
+
+  /* ============================================================
+     11. DESKTOP / TABLET
+     ============================================================ */
+  @media (min-width: 820px){
+    .app{
+      max-width: 900px;
+      padding: 30px 24px 72px;
+    }
+
+    .cabecalho h1{ font-size:1.5rem; }
+
+    .lote-card{ padding:18px 22px 20px; }
+    .lote-input input{ font-size:2.1rem; }
+
+    .produtos-cabecalho{
+      display:grid;
+      grid-template-columns: var(--cols);
+      gap:12px;
+      padding:0 16px 9px;
+      font-size:.68rem;
+      font-weight:800;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      color:var(--ink-soft);
+    }
+
+    .produto{
+      grid-template-columns: var(--cols);
+      align-items:center;
+      gap:12px;
+      padding:12px 16px;
+    }
+
+    .produto-cab{ display:contents; }
+    .rotulo{ display:none; }
+
+    .campo{ display:block; }
+    .campo label{ display:none; }
+    .campo-nome{ grid-column:auto; }
+    .campo-dosagem{
+      grid-column:auto;
+      margin:0;
+      padding:0;
+      background:transparent;
+      border-radius:0;
+      justify-content:flex-start;
+    }
+    .resultado{ font-size:1.05rem; }
+    .resultado small{ font-size:.68rem; }
+
+    .campo input{ padding:10px 12px; font-size:.95rem; }
+
+    .btn-excluir{
+      grid-column:5;
+      justify-self:end;
+    }
+
+    .acoes{
+      flex-direction:row;
+      gap:12px;
+    }
+    .btn-primario{ flex:2 1 0; }
+    .btn-secundario{ flex:1 1 0; }
+  }
+
+  /* ============================================================
+     12. ACESSIBILIDADE / MOVIMENTO REDUZIDO
+     ============================================================ */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+      animation-duration:.001ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;
+    }
+    .bg{ display:none; }
+  }
+
+  :focus-visible{
+    outline:2px solid var(--leaf);
+    outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Fundo animado decorativo -->
+  <div class="bg" id="fundoAnimado" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+  </div>
+
+  <main class="app">
+
+    <!-- Cabeçalho -->
+    <header class="cabecalho">
+      <div class="marca" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+          <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Calculadora de Dosagem</h1>
+        <p>mL/kg de cada produto e volume necessário para o lote</p>
+      </div>
+    </header>
+
+    <!-- Peso do lote -->
+    <section class="card lote-card" aria-labelledby="rotuloLote">
+      <div class="lote-rotulo" id="rotuloLote">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 8h12l1.5 12H4.5L6 8Z"/>
+          <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+        </svg>
+        <span>Peso do lote</span>
+      </div>
+
+      <div class="lote-input" id="loteWrap">
+        <input type="number" id="loteKg" value="5000" step="0.1" min="0"
+               inputmode="decimal" enterkeyhint="done" autocomplete="off"
+               aria-label="Peso do lote em quilogramas">
+        <span class="unidade" aria-hidden="true">kg</span>
+      </div>
+
+      <p class="lote-formatado" id="loteFormatado">5.000 kg</p>
+    </section>
+
+    <!-- Produtos -->
+    <section aria-labelledby="tituloProdutos">
+      <div class="secao-titulo">
+        <h2 id="tituloProdutos">Produtos</h2>
+        <span class="contador" id="contador">0 produtos</span>
+      </div>
+
+      <div class="produtos-cabecalho" aria-hidden="true">
+        <span>Produto</span>
+        <span>Dose (L)</span>
+        <span>Base (kg)</span>
+        <span>Dosagem</span>
+        <span></span>
+      </div>
+
+      <div class="produtos" id="listaProdutos"></div>
+    </section>
+
+    <!-- Ações -->
+    <div class="acoes">
+      <button type="button" class="btn btn-primario" id="btnAdicionar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Adicionar produto
+      </button>
+
+      <button type="button" class="btn btn-secundario" id="btnRestaurar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+          <path d="M21 3v6h-6"/>
+        </svg>
+        Restaurar padrão
+      </button>
+    </div>
+
+    <!-- Volume necessário -->
+    <section class="card totais-card" aria-labelledby="tituloTotais">
+      <h2 id="tituloTotais">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2.7 6.6 8.1a7.6 7.6 0 1 0 10.8 0Z"/>
+        </svg>
+        Volume necessário para o lote informado
+      </h2>
+      <p class="totais-sub" id="totaisSub">Dosagem em mL/kg e volume em litros (L)</p>
+      <div id="totaisLista"></div>
+    </section>
+
+  </main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ============================================================
+     CONSTANTES
+     ============================================================ */
+  var CHAVE_STORAGE = 'calculadora-dosagem-v1';
+
+  var PADRAO = {
+    lote: 5000,
+    produtos: [
+      { nome: 'SUMMIT',  dose: 16.1, base: 5000 },
+      { nome: 'PLUST',   dose: 13.8, base: 5000 },
+      { nome: 'RADICEL', dose: 13.8, base: 5000 }
+    ]
+  };
+
+  var ICONE_GOTA =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M12 2.7 6.6 8.1a7.6 7.6 0 1 0 10.8 0Z"/></svg>';
+
+  var ICONE_LIXEIRA =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M3 6h18"/><path d="M8 6V4h8v2"/>' +
+    '<path d="M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>';
+
+  var fmt2    = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var fmtLote = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+
+  /* ============================================================
+     ESTADO
+     ============================================================ */
+  var produtos = [];
+  var proximoId = 1;
+  var timerSalvar = null;
+
+  /* ============================================================
+     REFERÊNCIAS DOM
+     ============================================================ */
+  var elLote          = document.getElementById('loteKg');
+  var elLoteWrap      = document.getElementById('loteWrap');
+  var elLoteFormatado = document.getElementById('loteFormatado');
+  var elLista         = document.getElementById('listaProdutos');
+  var elTotais        = document.getElementById('totaisLista');
+  var elContador      = document.getElementById('contador');
+  var elBtnAdicionar  = document.getElementById('btnAdicionar');
+  var elBtnRestaurar  = document.getElementById('btnRestaurar');
+
+  /* ============================================================
+     UTILITÁRIOS
+     ============================================================ */
+  function reduzirMovimento(){
+    return window.matchMedia &&
+           window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function numeroOuZero(valor){
+    var n = parseFloat(String(valor).replace(',', '.'));
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+
+  function escapeHtml(texto){
+    return String(texto).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function pulsar(el){
+    if(!el || reduzirMovimento()) return;
+    el.classList.remove('pulsar');
+    void el.offsetWidth;
+    el.classList.add('pulsar');
+  }
+
+  /* ============================================================
+     CÁLCULOS — FÓRMULAS ORIGINAIS (INALTERADAS)
+     ============================================================ */
+  function calcularMlPorKg(dose, base){
+    if(!base || base <= 0) return 0;
+    return (dose * 1000) / base;
+  }
+
+  function calcularLitros(mlPorKg, loteKg){
+    return (mlPorKg * loteKg) / 1000;
+  }
+
+  function lerLote(){
+    var n = parseFloat(String(elLote.value).replace(',', '.'));
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
+  /* ============================================================
+     PERSISTÊNCIA
+     ============================================================ */
+  function salvarEstado(){
+    var dados = {
+      lote: elLote.value,
+      produtos: produtos.map(function(p){
+        return { nome: p.nome, dose: p.dose, base: p.base };
+      })
+    };
+    try{
+      localStorage.setItem(CHAVE_STORAGE, JSON.stringify(dados));
+    }catch(e){ /* armazenamento indisponível — ignora */ }
+  }
+
+  function agendarSalvar(){
+    clearTimeout(timerSalvar);
+    timerSalvar = setTimeout(salvarEstado, 300);
+  }
+
+  function carregarEstado(){
+    var dados = null;
+    try{
+      var bruto = localStorage.getItem(CHAVE_STORAGE);
+      if(bruto) dados = JSON.parse(bruto);
+    }catch(e){ dados = null; }
+
+    if(dados && Array.isArray(dados.produtos)){
+      produtos = dados.produtos.map(function(p){
+        return {
+          id: proximoId++,
+          nome: typeof p.nome === 'string' ? p.nome : '',
+          dose: numeroOuZero(p.dose),
+          base: numeroOuZero(p.base)
+        };
+      });
+      var lote = numeroOuZero(dados.lote);
+      elLote.value = lote > 0 ? String(lote) : '';
+    }else{
+      aplicarPadrao();
+    }
+  }
+
+  function aplicarPadrao(){
+    produtos = PADRAO.produtos.map(function(p){
+      return { id: proximoId++, nome: p.nome, dose: p.dose, base: p.base };
+    });
+    elLote.value = String(PADRAO.lote);
+  }
+
+  /* ============================================================
+     CONSTRUÇÃO DA LISTA
+     ============================================================ */
+  function criarCampo(opcoes){
+    var wrap = document.createElement('div');
+    wrap.className = 'campo' + (opcoes.classe ? ' ' + opcoes.classe : '');
+
+    var inputId = 'campo-' + opcoes.campo + '-' + opcoes.id;
+
+    var label = document.createElement('label');
+    label.setAttribute('for', inputId);
+    label.textContent = opcoes.rotulo;
+
+    var input = document.createElement('input');
+    input.id = inputId;
+    input.type = opcoes.tipo;
+    input.value = opcoes.valor;
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    if(opcoes.inputMode) input.setAttribute('inputmode', opcoes.inputMode);
+    if(opcoes.step) input.step = opcoes.step;
+    if(opcoes.tipo === 'number') input.min = '0';
+
+    if(opcoes.campo === 'base' && !(opcoes.valorNumerico > 0)){
+      input.classList.add('invalido');
+    }
+
+    input.addEventListener('input', function(){
+      aoEditar(opcoes.id, opcoes.campo, input);
+    });
+
+    input.addEventListener('blur', function(){
+      if(opcoes.campo === 'nome') return;
+      var n = parseFloat(String(input.value).replace(',', '.'));
+      if(Number.isFinite(n) && n < 0){
+        input.value = '0';
+        aoEditar(opcoes.id, opcoes.campo, input);
+      }
+    });
+
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function criarCardProduto(p){
+    var card = document.createElement('div');
+    card.className = 'produto';
+    card.setAttribute('data-id', String(p.id));
+
+    /* Cabeçalho mobile (rótulo + botão excluir) */
+    var cab = document.createElement('div');
+    cab.className = 'produto-cab';
+
+    var rotulo = document.createElement('span');
+    rotulo.className = 'rotulo';
+    rotulo.textContent = 'Produto';
+
+    var btnExcluir = document.createElement('button');
+    btnExcluir.type = 'button';
+    btnExcluir.className = 'btn-excluir';
+    btnExcluir.setAttribute('aria-label', 'Excluir ' + (p.nome || 'produto'));
+    btnExcluir.innerHTML = ICONE_LIXEIRA;
+    btnExcluir.addEventListener('click', function(){
+      if(card.dataset.removendo === '1') return;
+      card.dataset.removendo = '1';
+      removerProduto(p.id);
+    });
+
+    cab.appendChild(rotulo);
+    cab.appendChild(btnExcluir);
+    card.appendChild(cab);
+
+    /* Nome */
+    card.appendChild(criarCampo({
+      id: p.id, campo: 'nome', rotulo: 'Produto',
+      tipo: 'text', valor: p.nome, classe: 'campo-nome'
+    }));
+
+    /* Dose */
+    card.appendChild(criarCampo({
+      id: p.id, campo: 'dose', rotulo: 'Dose (L)',
+      tipo: 'number', step: '0.01', inputMode: 'decimal',
+      valor: String(p.dose), valorNumerico: p.dose
+    }));
+
+    /* Base */
+    card.appendChild(criarCampo({
+      id: p.id, campo: 'base', rotulo: 'Base (kg)',
+      tipo: 'number', step: '1', inputMode: 'numeric',
+      valor: String(p.base), valorNumerico: p.base
+    }));
+
+    /* Dosagem */
+    var campoDosagem = document.createElement('div');
+    campoDosagem.className = 'campo campo-dosagem';
+
+    var labelDosagem = document.createElement('label');
+    labelDosagem.textContent = 'Dosagem';
+
+    var resultado = document.createElement('div');
+    resultado.className = 'resultado';
+
+    var valor = document.createElement('span');
+    valor.className = 'valor';
+    valor.textContent = fmt2.format(calcularMlPorKg(p.dose, p.base));
+
+    var unidade = document.createElement('small');
+    unidade.textContent = 'mL/kg';
+
+    resultado.appendChild(valor);
+    resultado.appendChild(unidade);
+
+    campoDosagem.appendChild(labelDosagem);
+    campoDosagem.appendChild(resultado);
+    card.appendChild(campoDosagem);
+
+    return card;
+  }
+
+  /* ============================================================
+     RENDERIZAÇÃO
+     ============================================================ */
+  function renderProdutos(animarId){
+    elLista.innerHTML = '';
+
+    if(!produtos.length){
+      var vazio = document.createElement('div');
+      vazio.className = 'vazio';
+      vazio.textContent = 'Nenhum produto adicionado. Toque em "Adicionar produto" para começar.';
+      elLista.appendChild(vazio);
+    }else{
+      produtos.forEach(function(p){
+        var card = criarCardProduto(p);
+        if(animarId !== undefined && p.id === animarId){
+          card.classList.add('entra');
+        }
+        elLista.appendChild(card);
+      });
+    }
+
+    atualizarCalculos();
+  }
+
+  function atualizarCalculos(){
+    var lote = lerLote();
+    var itens = [];
+
+    produtos.forEach(function(p){
+      var mlPorKg = calcularMlPorKg(p.dose, p.base);
+      var litros  = calcularLitros(mlPorKg, lote);
+
+      var card = elLista.querySelector('.produto[data-id="' + p.id + '"]');
+      if(card){
+        var valorEl = card.querySelector('.valor');
+        if(valorEl){
+          var texto = fmt2.format(mlPorKg);
+          if(valorEl.textContent !== texto){
+            valorEl.textContent = texto;
+            pulsar(valorEl);
+          }
+        }
+      }
+
+      itens.push({ nome: p.nome, litros: litros, mlPorKg: mlPorKg });
+    });
+
+    renderTotais(itens);
+    atualizarContador();
+  }
+
+  function renderTotais(itens){
+    if(!itens.length){
+      elTotais.innerHTML = '<div class="vazio">Nenhum produto para calcular.</div>';
+      return;
+    }
+
+    var html = '';
+    itens.forEach(function(item, indice){
+      var nome = item.nome ? escapeHtml(item.nome) : '(sem nome)';
+      html +=
+        '<div class="total-item" style="animation-delay:' + Math.min(indice * 30, 240) + 'ms">' +
+          '<span class="total-icone">' + ICONE_GOTA + '</span>' +
+          '<span class="total-info">' +
+            '<span class="total-nome">' + nome + '</span>' +
+            '<span class="total-dosagem">' +
+              '<span class="valor-mini">' + fmt2.format(item.mlPorKg) + '</span>' +
+              '<span class="unidade-mini">mL/kg</span>' +
+            '</span>' +
+          '</span>' +
+          '<span class="total-valor">' + fmt2.format(item.litros) + '<small>L</small></span>' +
+        '</div>';
+    });
+
+    elTotais.innerHTML = html;
+  }
+
+  function atualizarContador(){
+    var n = produtos.length;
+    elContador.textContent = n === 1 ? '1 produto' : n + ' produtos';
+  }
+
+  function atualizarLoteFormatado(){
+    var bruto = parseFloat(String(elLote.value).replace(',', '.'));
+    var ok = Number.isFinite(bruto) && bruto > 0;
+
+    elLoteWrap.classList.toggle('invalido', !ok);
+    elLoteFormatado.textContent = ok
+      ? fmtLote.format(bruto) + ' kg'
+      : 'Informe um peso de lote válido';
+  }
+
+  /* ============================================================
+     EDIÇÃO
+     ============================================================ */
+  function aoEditar(id, campo, input){
+    var produto = null;
+    for(var i = 0; i < produtos.length; i++){
+      if(produtos[i].id === id){ produto = produtos[i]; break; }
+    }
+    if(!produto) return;
+
+    if(campo === 'nome'){
+      produto.nome = input.value;
+      var card = input.closest('.produto');
+      if(card){
+        var btn = card.querySelector('.btn-excluir');
+        if(btn) btn.setAttribute('aria-label', 'Excluir ' + (produto.nome || 'produto'));
+      }
+    }else{
+      var bruto = parseFloat(String(input.value).replace(',', '.'));
+      var valido = Number.isFinite(bruto) && bruto >= 0;
+      produto[campo] = valido ? bruto : 0;
+
+      var invalido = !valido || (campo === 'base' && bruto <= 0);
+      input.classList.toggle('invalido', invalido);
+    }
+
+    atualizarCalculos();
+    agendarSalvar();
+  }
+
+  function adicionarProduto(){
+    var novo = { id: proximoId++, nome: 'NOVO PRODUTO', dose: 0, base: 5000 };
+    produtos.push(novo);
+    renderProdutos(novo.id);
+    salvarEstado();
+
+    var card = elLista.querySelector('.produto[data-id="' + novo.id + '"]');
+    if(card){
+      var input = card.querySelector('.campo-nome input');
+      if(input && window.innerWidth >= 820) input.focus();
+    }
+  }
+
+  function removerProduto(id){
+    var indice = -1;
+    for(var i = 0; i < produtos.length; i++){
+      if(produtos[i].id === id){ indice = i; break; }
+    }
+    if(indice < 0) return;
+
+    var card = elLista.querySelector('.produto[data-id="' + id + '"]');
+
+    function efetivar(){
+      produtos.splice(indice, 1);
+      renderProdutos();
+      salvarEstado();
+    }
+
+    if(card && !reduzirMovimento()){
+      card.classList.add('saindo');
+      setTimeout(efetivar, 190);
+    }else{
+      efetivar();
+    }
+  }
+
+  function restaurarPadrao(){
+    var ok = window.confirm(
+      'Restaurar os valores padrão?\n\n' +
+      'Os produtos, doses e bases atuais serão substituídos.'
+    );
+    if(!ok) return;
+
+    aplicarPadrao();
+    atualizarLoteFormatado();
+    renderProdutos();
+    salvarEstado();
+  }
+
+  /* ============================================================
+     FUNDO ANIMADO
+     ============================================================ */
+  function criarFundoAnimado(){
+    var fundo = document.getElementById('fundoAnimado');
+    if(!fundo || reduzirMovimento()) return;
+
+    var total = window.innerWidth < 600 ? 10 : 18;
+    var tipos = ['ponto', 'folha', 'semente'];
+    var fragmento = document.createDocumentFragment();
+
+    for(var i = 0; i < total; i++){
+      var p = document.createElement('span');
+      p.className = 'particula ' + tipos[i % tipos.length];
+
+      var tamanho = 5 + Math.random() * 13;
+      var duracao = 30 + Math.random() * 32;
+      var atraso  = -Math.random() * 45;
+
+      p.style.setProperty('--x',     (Math.random() * 100).toFixed(2) + 'vw');
+      p.style.setProperty('--s',     tamanho.toFixed(1) + 'px');
+      p.style.setProperty('--d',     duracao.toFixed(1) + 's');
+      p.style.setProperty('--delay', atraso.toFixed(1) + 's');
+      p.style.setProperty('--drift', ((Math.random() * 18) - 9).toFixed(1) + 'vw');
+      p.style.setProperty('--op',    (0.09 + Math.random() * 0.16).toFixed(2));
+      p.style.setProperty('--rot',   Math.round(Math.random() * 360) + 'deg');
+
+      fragmento.appendChild(p);
+    }
+
+    fundo.appendChild(fragmento);
+  }
+
+  /* ============================================================
+     INICIALIZAÇÃO
+     ============================================================ */
+  function iniciar(){
+    criarFundoAnimado();
+    carregarEstado();
+    atualizarLoteFormatado();
+    renderProdutos();
+
+    elLote.addEventListener('input', function(){
+      atualizarLoteFormatado();
+      atualizarCalculos();
+      agendarSalvar();
+    });
+
+    elLote.addEventListener('blur', function(){
+      var n = parseFloat(String(elLote.value).replace(',', '.'));
+      if(Number.isFinite(n) && n < 0){
+        elLote.value = '0';
+        atualizarLoteFormatado();
+        atualizarCalculos();
+        agendarSalvar();
+      }
+    });
+
+    elBtnAdicionar.addEventListener('click', adicionarProduto);
+    elBtnRestaurar.addEventListener('click', restaurarPadrao);
+
+    window.addEventListener('pagehide', salvarEstado);
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState === 'hidden') salvarEstado();
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', iniciar);
+  }else{
+    iniciar();
+  }
+})();
+</script>
+
+</body>
+</html>
