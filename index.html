@@ -574,6 +574,52 @@
   /* ============================================================
      9. PAINEL DE VOLUME
      ============================================================ */
+  .historico-card{
+    margin-top:20px;
+    padding:16px 18px;
+  }
+  .historico-card h2{
+    margin:0 0 10px;
+    font-size:.95rem;
+    font-weight:800;
+    color:var(--ink);
+  }
+  .historico-acoes{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .historico-select{
+    flex:1 1 auto;
+    min-width:0;
+    width:100%;
+    padding:11px 12px;
+    color:var(--ink);
+    background:var(--surface-2);
+    border:1.5px solid var(--line);
+    border-radius:11px;
+    box-sizing:border-box;
+  }
+  .historico-btn{
+    flex:0 0 auto;
+    padding:11px 12px;
+    color:var(--leaf-dark);
+    background:var(--leaf-soft);
+    border:1px solid var(--line);
+    border-radius:11px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .historico-btn.excluir{ color:var(--danger); background:var(--danger-soft); }
+  @media (max-width:420px){
+    .historico-acoes{ flex-wrap:wrap; }
+    .historico-select{ flex-basis:100%; }
+    .historico-btn{ flex:1 1 0; }
+  }
+
+  /* ============================================================
+     9. PAINEL DE VOLUME
+     ============================================================ */
   .totais-card{
     margin-top:20px;
     padding:16px 18px 10px;
@@ -884,6 +930,18 @@
       </button>
     </div>
 
+    <!-- Histórico de receitas -->
+    <section class="card historico-card" aria-labelledby="tituloHistorico">
+      <h2 id="tituloHistorico">Histórico de receitas</h2>
+      <div class="historico-acoes">
+        <select class="historico-select" id="historicoReceitas" aria-label="Receitas salvas">
+          <option value="">Nenhuma receita salva</option>
+        </select>
+        <button type="button" class="historico-btn" id="btnSalvarReceita">Salvar atual</button>
+        <button type="button" class="historico-btn excluir" id="btnExcluirReceita">Excluir</button>
+      </div>
+    </section>
+
     <!-- Volume necessário -->
     <section class="card totais-card" aria-labelledby="tituloTotais">
       <h2 id="tituloTotais">
@@ -908,6 +966,7 @@
      ============================================================ */
   var CHAVE_STORAGE = 'calculadora-dosagem-v1';
   var CHAVE_TEMA = 'calculadora-dosagem-tema';
+  var CHAVE_HISTORICO = 'calculadora-dosagem-historico-v1';
 
   var PADRAO = {
     lote: 5000,
@@ -951,6 +1010,9 @@
   var elBtnAdicionar  = document.getElementById('btnAdicionar');
   var elBtnRestaurar  = document.getElementById('btnRestaurar');
   var elBtnTema       = document.getElementById('btnTema');
+  var elHistorico     = document.getElementById('historicoReceitas');
+  var elBtnSalvar     = document.getElementById('btnSalvarReceita');
+  var elBtnExcluir    = document.getElementById('btnExcluirReceita');
 
   /* ============================================================
      UTILITÁRIOS
@@ -1016,6 +1078,71 @@
   /* ============================================================
      PERSISTÊNCIA
      ============================================================ */
+  function lerHistorico(){
+    try{
+      var bruto = localStorage.getItem(CHAVE_HISTORICO);
+      var lista = bruto ? JSON.parse(bruto) : [];
+      return Array.isArray(lista) ? lista : [];
+    }catch(e){ return []; }
+  }
+
+  function salvarHistorico(lista){
+    try{ localStorage.setItem(CHAVE_HISTORICO, JSON.stringify(lista)); }catch(e){}
+  }
+
+  function atualizarHistorico(){
+    var lista = lerHistorico();
+    elHistorico.innerHTML = '';
+    if(!lista.length){
+      elHistorico.appendChild(new Option('Nenhuma receita salva', ''));
+      return;
+    }
+    elHistorico.appendChild(new Option('Selecione uma receita', ''));
+    lista.forEach(function(receita, indice){
+      elHistorico.appendChild(new Option(receita.nome, String(indice)));
+    });
+  }
+
+  function salvarReceita(){
+    var nome = window.prompt('Nome da receita:');
+    if(!nome || !nome.trim()) return;
+    var lista = lerHistorico();
+    lista.push({
+      nome: nome.trim(),
+      lote: elLote.value,
+      produtos: produtos.map(function(p){
+        return { nome:p.nome, dose:p.dose, base:p.base };
+      })
+    });
+    salvarHistorico(lista);
+    atualizarHistorico();
+    elHistorico.value = String(lista.length - 1);
+  }
+
+  function carregarReceita(){
+    var indice = parseInt(elHistorico.value, 10);
+    var lista = lerHistorico();
+    if(!Number.isInteger(indice) || !lista[indice]) return;
+    var receita = lista[indice];
+    produtos = (Array.isArray(receita.produtos) ? receita.produtos : []).map(function(p){
+      return { id:proximoId++, nome:String(p.nome || ''), dose:numeroOuZero(p.dose), base:numeroOuZero(p.base) };
+    });
+    elLote.value = numeroOuZero(receita.lote) > 0 ? String(numeroOuZero(receita.lote)) : '';
+    atualizarLoteFormatado();
+    renderProdutos();
+    salvarEstado();
+  }
+
+  function excluirReceita(){
+    var indice = parseInt(elHistorico.value, 10);
+    var lista = lerHistorico();
+    if(!Number.isInteger(indice) || !lista[indice]) return;
+    if(!window.confirm('Excluir a receita "' + lista[indice].nome + '"?')) return;
+    lista.splice(indice, 1);
+    salvarHistorico(lista);
+    atualizarHistorico();
+  }
+
   function salvarEstado(){
     var dados = {
       lote: elLote.value,
@@ -1396,6 +1523,7 @@
     carregarEstado();
     atualizarLoteFormatado();
     renderProdutos();
+    atualizarHistorico();
 
     elLote.addEventListener('input', function(){
       atualizarLoteFormatado();
@@ -1418,6 +1546,9 @@
     elBtnTema.addEventListener('click', function(){
       aplicarTema(document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
     });
+    elBtnSalvar.addEventListener('click', salvarReceita);
+    elHistorico.addEventListener('change', carregarReceita);
+    elBtnExcluir.addEventListener('click', excluirReceita);
 
     window.addEventListener('pagehide', salvarEstado);
     document.addEventListener('visibilitychange', function(){
