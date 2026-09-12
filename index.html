@@ -373,8 +373,12 @@
 
   .produto{
     position:relative;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    overflow:hidden;
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
     gap:12px;
     padding:14px;
     background:var(--surface);
@@ -397,6 +401,7 @@
     min-height:34px;
   }
   .rotulo{
+    display:none;
     font-size:.70rem;
     font-weight:800;
     letter-spacing:.10em;
@@ -409,6 +414,7 @@
     flex-direction:column;
     gap:5px;
     min-width:0;
+    max-width:100%;
   }
   .campo label{
     font-size:.68rem;
@@ -423,6 +429,8 @@
   .campo input{
     width:100%;
     min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
     padding:11px 12px;
     font-size:1rem;
     font-weight:600;
