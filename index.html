@@ -875,7 +875,15 @@
       min-width:0;
       box-sizing:border-box;
     }
-    .app{ margin:0; padding-left:16px; padding-right:16px; }
+    .app{
+      width:calc(100% - 32px);
+      max-width:720px;
+      margin-left:auto;
+      margin-right:auto;
+      padding-left:0;
+      padding-right:0;
+      box-sizing:border-box;
+    }
     .produto{ padding:12px; gap:8px; }
     .produto-cab, .campo, .campo-dosagem, .resultado{ min-width:0; max-width:100%; }
     .campo input{ padding-left:10px; padding-right:10px; }
