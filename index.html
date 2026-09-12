@@ -97,6 +97,8 @@
 
   body{
     margin:0;
+    width:100%;
+    max-width:100%;
     min-height:100dvh;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size:16px;
@@ -178,6 +180,8 @@
     position:relative;
     z-index:1;
     width:100%;
+    min-width:0;
+    overflow-x:hidden;
     max-width:720px;
     margin:0 auto;
     padding:calc(30px + env(safe-area-inset-top)) 16px calc(52px + env(safe-area-inset-bottom));
@@ -839,6 +843,19 @@
     }
     .btn-primario{ flex:2 1 0; }
     .btn-secundario{ flex:1 1 0; }
+  }
+
+  @media (max-width: 600px){
+    .app{ padding-left:12px; padding-right:12px; }
+    .produto{ padding:12px; gap:8px; }
+    .campo input{ padding-left:10px; padding-right:10px; }
+    .campo-dosagem{ gap:6px; padding-left:10px; padding-right:10px; }
+    .campo-dosagem label{ font-size:.64rem; }
+    .resultado{ font-size:clamp(.92rem, 5.7vw, 1.35rem); gap:3px; }
+    .resultado small{ font-size:.64rem; }
+    .total-item{ gap:8px; }
+    .total-valor{ font-size:1rem; max-width:40%; }
+    .total-valor small{ font-size:.68rem; }
   }
 
   /* ============================================================
