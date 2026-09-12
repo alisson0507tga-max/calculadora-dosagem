@@ -18,7 +18,7 @@ No celular Android:
 
 ## Histórico de receitas
 
-Depois de preencher uma receita, toque em **Salvar atual**, informe um nome e a receita ficará disponível no seletor de **Histórico de receitas**. Ao selecionar uma receita salva, os produtos e o peso do lote são carregados automaticamente. Os botões permitem excluir uma receita selecionada. O histórico fica salvo somente no aparelho, sem envio para a internet.
+Depois de preencher uma receita, digite o nome no campo **Nome da receita para salvar** e toque em **Salvar atual**. A receita ficará disponível no seletor de **Histórico de receitas**. Ao selecionar uma receita salva, os produtos e o peso do lote são carregados automaticamente. Os botões permitem excluir uma receita selecionada. O histórico fica salvo somente no aparelho, sem envio para a internet.
 
 Se o Android bloquear a instalação, acesse **Configurações > Segurança/Privacidade > Instalar apps desconhecidos** e permita temporariamente para o aplicativo usado para abrir o APK.
 

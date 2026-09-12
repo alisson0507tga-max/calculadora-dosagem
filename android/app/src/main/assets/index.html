@@ -177,6 +177,7 @@
   .app{
     position:relative;
     z-index:1;
+    width:100%;
     max-width:720px;
     margin:0 auto;
     padding:calc(30px + env(safe-area-inset-top)) 16px calc(52px + env(safe-area-inset-bottom));
@@ -248,6 +249,8 @@
      6. CARDS / LOTE
      ============================================================ */
   .card{
+    width:100%;
+    min-width:0;
     background:var(--surface);
     border:1px solid var(--line);
     border-radius:var(--radius);
@@ -366,6 +369,8 @@
   .produtos-cabecalho{ display:none; }
 
   .produtos{
+    width:100%;
+    min-width:0;
     display:flex;
     flex-direction:column;
     gap:12px;
@@ -588,6 +593,18 @@
     display:flex;
     gap:8px;
     align-items:center;
+    flex-wrap:wrap;
+  }
+  .historico-nome{
+    flex:1 1 100%;
+    min-width:0;
+    width:100%;
+    padding:11px 12px;
+    color:var(--ink);
+    background:var(--surface-2);
+    border:1.5px solid var(--line);
+    border-radius:11px;
+    box-sizing:border-box;
   }
   .historico-select{
     flex:1 1 auto;
@@ -611,8 +628,8 @@
     cursor:pointer;
   }
   .historico-btn.excluir{ color:var(--danger); background:var(--danger-soft); }
+  .app > *{ max-width:100%; }
   @media (max-width:420px){
-    .historico-acoes{ flex-wrap:wrap; }
     .historico-select{ flex-basis:100%; }
     .historico-btn{ flex:1 1 0; }
   }
@@ -934,6 +951,7 @@
     <section class="card historico-card" aria-labelledby="tituloHistorico">
       <h2 id="tituloHistorico">Histórico de receitas</h2>
       <div class="historico-acoes">
+        <input class="historico-nome" id="nomeReceita" type="text" maxlength="60" placeholder="Nome da receita para salvar" autocomplete="off">
         <select class="historico-select" id="historicoReceitas" aria-label="Receitas salvas">
           <option value="">Nenhuma receita salva</option>
         </select>
@@ -1011,6 +1029,7 @@
   var elBtnRestaurar  = document.getElementById('btnRestaurar');
   var elBtnTema       = document.getElementById('btnTema');
   var elHistorico     = document.getElementById('historicoReceitas');
+  var elNomeReceita   = document.getElementById('nomeReceita');
   var elBtnSalvar     = document.getElementById('btnSalvarReceita');
   var elBtnExcluir    = document.getElementById('btnExcluirReceita');
 
@@ -1104,8 +1123,11 @@
   }
 
   function salvarReceita(){
-    var nome = window.prompt('Nome da receita:');
-    if(!nome || !nome.trim()) return;
+    var nome = elNomeReceita.value.trim();
+    if(!nome){
+      elNomeReceita.focus();
+      return;
+    }
     var lista = lerHistorico();
     lista.push({
       nome: nome.trim(),
@@ -1117,6 +1139,7 @@
     salvarHistorico(lista);
     atualizarHistorico();
     elHistorico.value = String(lista.length - 1);
+    elNomeReceita.value = '';
   }
 
   function carregarReceita(){
