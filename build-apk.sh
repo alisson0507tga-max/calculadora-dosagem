@@ -2,18 +2,18 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 WORK="/tmp/calculadora-apk-build"
+BASE_APK="$WORK/base.apk"
 rm -rf "$WORK"
 mkdir -p "$WORK/unpacked"
-unzip -q "$ROOT/CalculadoraDosagem.apk" -d "$WORK/unpacked"
+git -C "$ROOT" show HEAD~2:CalculadoraDosagem.apk > "$BASE_APK"
+unzip -q "$BASE_APK" -d "$WORK/unpacked"
 cp "$ROOT/android/app/src/main/assets/index.html" "$WORK/unpacked/assets/index.html"
-rm -f "$WORK/unpacked"/META-INF/*.SF "$WORK/unpacked"/META-INF/*.RSA "$WORK/unpacked"/META-INF/*.DSA "$WORK/unsigned.apk" "$WORK/signed.apk"
+rm -f "$WORK/unpacked"/META-INF/*.SF "$WORK/unpacked"/META-INF/*.RSA "$WORK/unpacked"/META-INF/*.DSA "$WORK/unsigned.apk" "$WORK/aligned.apk" "$WORK/signed.apk"
 (cd "$WORK/unpacked" && zip -q -X -r "$WORK/unsigned.apk" .)
-if [ ! -f "$ROOT/.apk-release.jks" ]; then
-  keytool -genkeypair -v -keystore "$ROOT/.apk-release.jks" -storepass calculadora -keypass calculadora -alias calculadora -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Calculadora de Dosagem, OU=Mobile, O=Calculadora, L=BR, ST=BR, C=BR" >/dev/null 2>&1
-fi
-apksigner sign --ks "$ROOT/.apk-release.jks" --ks-pass pass:calculadora --key-pass pass:calculadora --out "$WORK/signed.apk" "$WORK/unsigned.apk" >/dev/null
+zipalign -f -p 4 "$WORK/unsigned.apk" "$WORK/aligned.apk"
+keytool -genkeypair -v -keystore "$WORK/apk-signing.jks" -storepass calculadora -keypass calculadora -alias calculadora -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Calculadora de Dosagem, OU=Mobile, O=Calculadora, L=BR, ST=BR, C=BR" >/dev/null 2>&1
+apksigner sign --ks "$WORK/apk-signing.jks" --ks-pass pass:calculadora --key-pass pass:calculadora --out "$WORK/signed.apk" "$WORK/aligned.apk" >/dev/null
 cp "$WORK/signed.apk" "$ROOT/CalculadoraDosagem.apk"
-rm -f "$ROOT/.apk-release.jks"
 apksigner verify --verbose "$ROOT/CalculadoraDosagem.apk"
 unzip -tq "$ROOT/CalculadoraDosagem.apk"
 unzip -p "$ROOT/CalculadoraDosagem.apk" assets/index.html | grep -q 'width:calc(100% - 32px)'
