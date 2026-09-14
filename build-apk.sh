@@ -11,9 +11,10 @@ rm -f "$WORK/unpacked"/META-INF/*.SF "$WORK/unpacked"/META-INF/*.RSA "$WORK/unpa
 if [ ! -f "$ROOT/.apk-release.jks" ]; then
   keytool -genkeypair -v -keystore "$ROOT/.apk-release.jks" -storepass calculadora -keypass calculadora -alias calculadora -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Calculadora de Dosagem, OU=Mobile, O=Calculadora, L=BR, ST=BR, C=BR" >/dev/null 2>&1
 fi
-jarsigner -keystore "$ROOT/.apk-release.jks" -storepass calculadora -keypass calculadora -sigalg SHA256withRSA -digestalg SHA-256 -signedjar "$WORK/signed.apk" "$WORK/unsigned.apk" calculadora >/dev/null
+apksigner sign --ks "$ROOT/.apk-release.jks" --ks-pass pass:calculadora --key-pass pass:calculadora --out "$WORK/signed.apk" "$WORK/unsigned.apk" >/dev/null
 cp "$WORK/signed.apk" "$ROOT/CalculadoraDosagem.apk"
 rm -f "$ROOT/.apk-release.jks"
+apksigner verify --verbose "$ROOT/CalculadoraDosagem.apk"
 unzip -tq "$ROOT/CalculadoraDosagem.apk"
 unzip -p "$ROOT/CalculadoraDosagem.apk" assets/index.html | grep -q 'width:calc(100% - 32px)'
 echo "APK criado: $ROOT/CalculadoraDosagem.apk"
