@@ -91,7 +91,7 @@
   /* ============================================================
      2. BASE
      ============================================================
-  *,*::before,*::after{ box-sizing:border-box; }
+  *,*::before,*::after{ box-sizing:border-box !important; }
 
   html{
     width:100%;
@@ -105,6 +105,7 @@
     width:100%;
     max-width:100%;
     min-height:100dvh;
+    position:relative;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -128,8 +129,10 @@
      3. FUNDO ANIMADO
      ============================================================ */
   .bg{
-    position:fixed;
+    position:absolute;
     inset:0;
+    width:100%;
+    max-width:100%;
     z-index:0;
     overflow:hidden;
     pointer-events:none;
@@ -272,7 +275,7 @@
 
   .lote-card{
     position:relative;
-    overflow:hidden;
+    overflow:clip;
     padding-block:16px 18px;
     padding-inline:18px;
     margin-bottom:20px;
@@ -282,7 +285,7 @@
   .lote-card::after{
     content:"";
     position:absolute;
-    right:-60px; top:-60px;
+    right:0; top:-60px;
     width:180px; height:180px;
     border-radius:50%;
     background: radial-gradient(circle, rgba(46,125,79,.12), transparent 70%);
@@ -306,6 +309,7 @@
     width:100%;
     min-width:0;
     max-width:100%;
+    box-sizing:border-box;
     display:flex;
     align-items:center;
     gap:10px;
