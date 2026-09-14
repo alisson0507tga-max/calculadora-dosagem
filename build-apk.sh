@@ -5,10 +5,11 @@ WORK="/tmp/calculadora-apk-build"
 BASE_APK="$WORK/base.apk"
 rm -rf "$WORK"
 mkdir -p "$WORK/unpacked"
-git -C "$ROOT" show HEAD~2:CalculadoraDosagem.apk > "$BASE_APK"
+git -C "$ROOT" show 0bf2fc1:CalculadoraDosagem.apk > "$BASE_APK"
 unzip -q "$BASE_APK" -d "$WORK/unpacked"
 cp "$ROOT/android/app/src/main/assets/index.html" "$WORK/unpacked/assets/index.html"
-rm -f "$WORK/unpacked"/META-INF/*.SF "$WORK/unpacked"/META-INF/*.RSA "$WORK/unpacked"/META-INF/*.DSA "$WORK/unsigned.apk" "$WORK/aligned.apk" "$WORK/signed.apk"
+rm -rf "$WORK/unpacked/META-INF"
+rm -f "$WORK/unsigned.apk" "$WORK/aligned.apk" "$WORK/signed.apk"
 (cd "$WORK/unpacked" && zip -q -X -r "$WORK/unsigned.apk" .)
 zipalign -f -p 4 "$WORK/unsigned.apk" "$WORK/aligned.apk"
 keytool -genkeypair -v -keystore "$WORK/apk-signing.jks" -storepass calculadora -keypass calculadora -alias calculadora -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Calculadora de Dosagem, OU=Mobile, O=Calculadora, L=BR, ST=BR, C=BR" >/dev/null 2>&1
